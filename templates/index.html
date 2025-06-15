@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Integrity Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; }
+        label { display: block; margin: 5px 0; }
+        input, textarea { width: 100%; padding: 5px; }
+        button { padding: 5px 10px; margin-top: 5px; }
+        #output { margin-top: 10px; color: green; }
+        #error { margin-top: 10px; color: red; }
+    </style>
+</head>
+<body>
+    <h1>Message Integrity Demo</h1>
+
+    <div class="section">
+        <h2>Register User</h2>
+        <label>Username:</label>
+        <input type="text" id="reg-username">
+        <button onclick="registerUser()">Register</button>
+        <div id="reg-output"></div>
+        <div id="reg-error"></div>
+    </div>
+
+    <div class="section">
+        <h2>Send Message</h2>
+        <label>Sender Username:</label>
+        <input type="text" id="send-sender">
+        <label>Recipient Username:</label>
+        <input type="text" id="send-recipient">
+        <label>Message:</label>
+        <textarea id="send-message"></textarea>
+        <button onclick="sendMessage()">Send</button>
+        <div id="send-output"></div>
+        <div id="send-error"></div>
+    </div>
+
+    <div class="section">
+        <h2>Middleman: Tamper Message</h2>
+        <label>Message ID:</label>
+        <input type="text" id="tamper-message-id">
+        <label>New Message:</label>
+        <textarea id="tamper-new-message"></textarea>
+        <button onclick="tamperMessage()">Tamper</button>
+        <div id="tamper-output"></div>
+        <div id="tamper-error"></div>
+    </div>
+
+    <div class="section">
+        <h2>Verify Message</h2>
+        <label>Message ID:</label>
+        <input type="text" id="verify-message-id">
+        <button onclick="verifyMessage()">Verify</button>
+        <div id="verify-output"></div>
+        <div id="verify-error"></div>
+    </div>
+
+    <script>
+        async function registerUser() {
+            const username = document.getElementById('reg-username').value;
+            const output = document.getElementById('reg-output');
+            const error = document.getElementById('reg-error');
+            output.textContent = ''; error.textContent = '';
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+                const data = await response.json();
+                if (data.error) {
+                    error.textContent = data.error;
+                } else {
+                    output.textContent = `Registered: ${data.username}, Public Key: ${data.public_key.substring(0, 50)}...`;
+                }
+            } catch (e) {
+                error.textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function sendMessage() {
+            const sender = document.getElementById('send-sender').value;
+            const recipient = document.getElementById('send-recipient').value;
+            const message = document.getElementById('send-message').value;
+            const output = document.getElementById('send-output');
+            const error = document.getElementById('send-error');
+            output.textContent = ''; error.textContent = '';
+            try {
+                const response = await fetch('/send_message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender, recipient, message })
+                });
+                const data = await response.json();
+                if (data.error) {
+                    error.textContent = data.error;
+                } else {
+                    output.textContent = `Message sent! ID: ${data.message_id}`;
+                }
+            } catch (e) {
+                error.textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function tamperMessage() {
+            const messageId = document.getElementById('tamper-message-id').value;
+            const newMessage = document.getElementById('tamper-new-message').value;
+            const output = document.getElementById('tamper-output');
+            const error = document.getElementById('tamper-error');
+            output.textContent = ''; error.textContent = '';
+            try {
+                const response = await fetch('/tamper_message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message_id: messageId, new_message: newMessage })
+                });
+                const data = await response.json();
+                if (data.error) {
+                    error.textContent = data.error;
+                } else {
+                    output.textContent = `Message tampered! ID: ${data.message_id}`;
+                }
+            } catch (e) {
+                error.textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function verifyMessage() {
+            const messageId = document.getElementById('verify-message-id').value;
+            const output = document.getElementById('verify-output');
+            const error = document.getElementById('verify-error');
+            output.textContent = ''; error.textContent = '';
+            try {
+                const response = await fetch('/verify_message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message_id: messageId })
+                });
+                const data = await response.json();
+                if (data.error) {
+                    error.textContent = data.error;
+                } else {
+                    output.textContent = `Sender: ${data.sender}, Recipient: ${data.recipient}, Message: ${data.message}, Valid: ${data.valid}, Tampered: ${data.tampered}`;
+                }
+            } catch (e) {
+                error.textContent = `Error: ${e.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
